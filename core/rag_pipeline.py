@@ -1,21 +1,8 @@
-from langchain_core.documents import Document
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough, RunnableWithMessageHistory, RunnableLambda
-from utils.history import get_history
-
 from core.retriever import VectorStoresService
 from langchain_community.embeddings import DashScopeEmbeddings
 from config.config import config
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_models.tongyi import ChatTongyi
-
-
-def print_prompt(prompt):
-    print("="*20 )
-    print(prompt.to_string())
-    print("="*20)
-
-    return prompt
 
 
 class RAGPipeline:
@@ -43,18 +30,43 @@ class RAGPipeline:
         )
 
         return "\n\n".join(formatted)
+    
+    def format_sources(self, docs):
+        sources: list[str] = []
+
+        for i, d in enumerate(docs):
+            metadata = d.metadata or {}
+
+            source = (
+                metadata.get("source")
+                or metadata.get("file_name")
+                or metadata.get("filename")
+                or "未知来源"
+            )
+
+            content = d.page_content.replace("\n", " ").strip()
+
+            sources.append(
+                f"[{i + 1}] 来源：{source}\n内容：{content[:120]}..."
+            )
+
+        return sources
 
     # 3prompt构建
     def build_prompt(self, context, query, history=None):
         return ChatPromptTemplate.from_messages([
             ("system",
             """
-            你是一个严谨的知识库助手，只能基于给定资料回答。
+            你是一个严谨的服装知识库问答助手，只能基于给定资料回答。
 
-            规则：
-            1. 如果资料没有相关内容，必须回答“资料中未找到相关信息”
-            2. 不允许编造答案
-            3. 必须引用资料内容
+            给定资料：
+            {context}
+
+            回答规则：
+            1. 如果资料中没有相关内容，回答“资料中未找到相关信息”
+            2. 不允许编造资料之外的信息
+            3. 回答时要尽量引用资料中的依据
+            4. 如果资料存在多个可能答案，需要说明判断依据
             """),
             MessagesPlaceholder("history"),
             ("user", "{input}")
@@ -75,18 +87,10 @@ class RAGPipeline:
         return {
             "answer": result.content,
             "context": context,
-            "sources": [
-                f"[{i+1}] {d.page_content[:80]}..."
-                for i, d in enumerate(docs)
-            ]
+            "sources": self.format_sources(docs),
         }
 
-if __name__ == '__main__':
-    #session id 配置
-    session_config = {
-        "configurable":{
-            "session_id":"user_001",
-        }
-    }
-    res =RAGPipeline().chain.invoke({"input":"春天穿什么颜色的衣服"},session_config)
+if __name__ == "__main__":
+    rag = RAGPipeline()
+    res = rag.run("春天穿什么颜色的衣服")
     print(res)
