@@ -13,6 +13,8 @@ ENV/
 .env
 .env.*
 !.env.example
+
+# Streamlit
 .streamlit/secrets.toml
 
 # IDE / OS
@@ -37,3 +39,4 @@ chat_history/
 uploads/
 tmp/
 temp/
+
