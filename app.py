@@ -1,15 +1,44 @@
 import streamlit as st
+from utils.file_loader import KnowledgeBaseService
 
 # ===== RAG核心（从rag.py导入）=====
 from core.rag_pipeline import RAGPipeline
 
 
 # ===== 上传模块 =====
+@st.cache_resource
+def load_kb_service():
+    return KnowledgeBaseService()
+
 def upload_app():
     st.title("知识库上传")
-    uploaded_file = st.file_uploader("上传文件")
-    if uploaded_file:
-        st.success("上传成功")
+
+    uploaded_file = st.file_uploader(
+        "上传知识库文件",
+        type=["txt", "md"]
+    )
+
+    if uploaded_file is None:
+        st.info("请上传 txt 或 md 格式的知识库文件")
+        return
+
+    if st.button("开始入库"):
+        try:
+            kb_service = load_kb_service()
+
+            result = kb_service.upload_file(
+                file_name=uploaded_file.name,
+                file_content=uploaded_file.getvalue(),
+            )
+
+            st.success(
+                f"入库成功：{result['file_name']}，共生成 {result['chunk_count']} 个知识片段"
+            )
+
+            st.cache_resource.clear()
+
+        except Exception as e:
+            st.error(f"知识库入库失败：{e}")
 
 @st.cache_resource
 def load_rag():
