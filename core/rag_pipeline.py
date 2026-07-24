@@ -4,7 +4,6 @@ from config.config import config
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_models.tongyi import ChatTongyi
 
-
 class RAGPipeline:
     def __init__(self):
         self.vector_service = VectorStoresService(
@@ -86,7 +85,7 @@ class RAGPipeline:
 
         return {
             "answer": result.content,
-            "context": context,
+            "context": context,                                        
             "sources": self.format_sources(docs),
         }
 
