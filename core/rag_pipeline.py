@@ -17,36 +17,55 @@ class RAGPipeline:
     def retrieve(self, query: str):
         return self.retriever.invoke(query)
 
+    
+    def get_doc_source(self, doc):
+        metadata = doc.metadata or {}
+
+        source = (
+            metadata.get("source")
+            or metadata.get("file_name")
+            or metadata.get("filename")
+            or "未知来源"
+        )
+
+        chunk_index = metadata.get("chunk_index", "未知片段")
+
+        return source, chunk_index
+
     # 2文档格式化
     def format_docs(self, docs):
         if not docs:
             return "无相关资料参考"
 
         formatted = []
-        for i, d in enumerate(docs):
+
+        for i, doc in enumerate(docs):
+            source, chunk_index = self.get_doc_source(doc)
+            content = doc.page_content.strip()
+
             formatted.append(
-                f"[{i+1}] {d.page_content}\n来源：{d.metadata}"
-        )
-
-        return "\n\n".join(formatted)
-    
-    def format_sources(self, docs):
-        sources: list[str] = []
-
-        for i, d in enumerate(docs):
-            metadata = d.metadata or {}
-
-            source = (
-                metadata.get("source")
-                or metadata.get("file_name")
-                or metadata.get("filename")
-                or "未知来源"
+                f"[资料{i + 1}]\n"
+                f"来源文件：{source}\n"
+                f"片段编号：{chunk_index}\n"
+                f"内容：{content}"
             )
 
-            content = d.page_content.replace("\n", " ").strip()
+        return "\n\n".join(formatted)
+
+    def format_sources(self, docs):
+        if not docs:
+            return []
+
+        sources: list[str] = []
+
+        for i, doc in enumerate(docs):
+            source, chunk_index = self.get_doc_source(doc)
+            content = doc.page_content.replace("\n", " ").strip()
 
             sources.append(
-                f"[{i + 1}] 来源：{source}\n内容：{content[:120]}..."
+                f"[{i + 1}] 来源文件：{source}\n"
+                f"片段编号：{chunk_index}\n"
+                f"内容片段：{content[:120]}..."
             )
 
         return sources
@@ -56,16 +75,17 @@ class RAGPipeline:
         return ChatPromptTemplate.from_messages([
             ("system",
             """
-            你是一个严谨的服装知识库问答助手，只能基于给定资料回答。
+    你是一个严谨的服装知识库问答助手，只能基于给定资料回答。
 
-            给定资料：
-            {context}
+    给定资料：
+    {context}
 
-            回答规则：
-            1. 如果资料中没有相关内容，回答“资料中未找到相关信息”
-            2. 不允许编造资料之外的信息
-            3. 回答时要尽量引用资料中的依据
-            4. 如果资料存在多个可能答案，需要说明判断依据
+    回答规则：
+    1. 必须优先基于“给定资料”回答用户问题。
+    2. 如果给定资料中没有相关内容，必须回答“资料中未找到相关信息”。
+    3. 不允许编造给定资料之外的事实、数据或建议。
+    4. 回答中需要说明依据来自哪条资料，例如“根据资料[1]”。
+    5. 如果多条资料存在不同建议，需要说明差异和判断依据。
             """),
             MessagesPlaceholder("history"),
             ("user", "{input}")
