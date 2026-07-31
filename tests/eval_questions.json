@@ -1,0 +1,38 @@
+[
+  {
+    "id": "size_001",
+    "question": "我身高172，体重140斤，应该穿什么尺码？",
+    "expected_source": "尺码推荐.txt",
+    "expected_keywords": ["身高", "体重", "尺码"]
+  },
+  {
+    "id": "size_002",
+    "question": "身高175体重150斤推荐多大码？",
+    "expected_source": "尺码推荐.txt",
+    "expected_keywords": ["175", "150", "尺码"]
+  },
+  {
+    "id": "wash_001",
+    "question": "衣服应该怎么洗才不容易变形？",
+    "expected_source": "洗涤养护.txt",
+    "expected_keywords": ["洗涤", "变形"]
+  },
+  {
+    "id": "wash_002",
+    "question": "深色衣服清洗时要注意什么？",
+    "expected_source": "洗涤养护.txt",
+    "expected_keywords": ["深色", "清洗"]
+  },
+  {
+    "id": "color_001",
+    "question": "春天适合穿什么颜色的衣服？",
+    "expected_source": "颜色选择.txt",
+    "expected_keywords": ["春天", "颜色"]
+  },
+  {
+    "id": "color_002",
+    "question": "肤色偏黄适合什么颜色？",
+    "expected_source": "颜色选择.txt",
+    "expected_keywords": ["肤色", "颜色"]
+  }
+]
